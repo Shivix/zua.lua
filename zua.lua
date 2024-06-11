@@ -15,10 +15,13 @@ local args = {
     init = false,
     help = false,
     patternmatch = false,
+    version = false,
 }
 local patterns = {}
+local version = "1.0.2"
 local help_msg = [[
-zua 1.0.1
+zua ]] .. version .. [[
+
 A simple and lightweight autojump tool
 
 USAGE:
@@ -33,7 +36,7 @@ OPTIONS:
     --case         Make the pattern case sensitive.
     --edit         Open up the data file in $EDITOR.
     --init         Outputs the required shell code to be added to shell config.
-                   (Only Fish supported currently)
+                   Only Fish supported currently
     --help         Prints help information.
     --patternmatch By default zua will escape ( ) . % + - * ? [ ^ $ and match these literally.
                    This option will disable this and utilise Lua pattern matching.
@@ -125,7 +128,9 @@ for _, a in ipairs(arg) do
 end
 
 if args.help then
-    print(help_msg)
+    io.stderr:write(help_msg)
+elseif args.version then
+    print("echo zua v" .. version)
 elseif args.edit then
     print(os.getenv("EDITOR") .. " " .. DATA_FILE)
 elseif args.add then
