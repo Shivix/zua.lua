@@ -10,8 +10,14 @@ Add the following line to your shell config:
 zua.lua --init | source
 ```
 
+Paths will be added to the data file whenever you `cd` into a new directory.\
+Then you can give zua a pattern or number of patterns and zua will cd into the first path that matches all patterns.
+```bash
+z <pattern>
+```
+
 Supports opt in pattern matching on file matching and opt in case sensitivity.\
-See zua --help for details.\
+See `zua.lua --help` for details.\
 `$ZUA_DEFAULT_ARGS` Environment variable may be set to adjust default behaviour.
 
 ## Issues
