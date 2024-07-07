@@ -72,11 +72,11 @@ set -gx ZUA_DATA_FILE $HOME/.local/state/zua/data
     elseif shell == "zsh" then
         print([[
 _zua_cd() {
-    if [[ "$@" = "-" || "$@" = ".." ]].."]]"..[[; then
+    if [[ "$@" = "-" || "$@" = ".." ]] .. "]]" .. [[; then
         cd "$@"
         return
     fi
-    if [[ -z "$@" ]].."]]"..[[; then
+    if [[ -z "$@" ]] .. "]]" .. [[; then
         cd
         return
     fi
