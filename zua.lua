@@ -11,7 +11,7 @@ local args = {
     version = false,
 }
 local patterns = {}
-local version = "1.1.0"
+local version = "1.1.1"
 local help_msg = [[
 zua.lua ]] .. version .. [[
 
@@ -61,7 +61,6 @@ function _zua_cd
         return
     end
     eval (zua.lua jump $argv $ZUA_DEFAULT_ARGS)
-    pwd
 end
 function _zua_add --on-variable PWD
     zua.lua add $PWD/
@@ -133,6 +132,7 @@ local function find_match()
                 goto continue
             end
         end
+        -- TODO: Check if path exists, if not, delete it from data.
         -- Ensure that we only ever try to cd with a single string arg to avoid eval running any bad code.
         print("cd '" .. line:gsub("'", "'\\''") .. "'")
         os.exit()
