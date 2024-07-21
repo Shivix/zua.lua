@@ -16,7 +16,7 @@ source <(zua.lua init zsh)
 Paths will be added to the data file whenever you `cd` into a new directory.\
 Then you can give zua a pattern or number of patterns and zua will cd into the first path that matches all patterns.
 ```bash
-$ z <pattern>
+$ zua <pattern>
 ```
 
 Supports opt in pattern matching on file matching and opt in case sensitivity.\

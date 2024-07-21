@@ -11,7 +11,7 @@ local args = {
     version = false,
 }
 local patterns = {}
-local version = "1.1.1"
+local version = "1.1.2"
 local help_msg = [[
 zua.lua ]] .. version .. [[
 
@@ -19,23 +19,23 @@ A simple and lightweight autojump tool
 
 USAGE:
     If the shell has been configured then:
-    z <pattern>...   This will match the pattern against the paths contained with $ZUA_DATA_FILE
-                     and jump to the first match
+    zua <pattern>...   This will match the pattern against the paths contained with $ZUA_DATA_FILE
+                       and jump to the first match
     If using zua directly then:
     zua.lua [CMD] [ARGS]
 
 CMD:
-    add <path>       Adds the provided path to the data file.
-    init <shell>     Outputs the required shell code to be added to shell config.
-                     "fish" and "zsh" are currently supported.
-    jump             Matches the patterns to a path prints a cd command for that path.
-    edit             Open up the data file in $EDITOR.
+    add <path>         Adds the provided path to the data file.
+    init <shell>       Outputs the required shell code to be added to shell config.
+                       "fish" and "zsh" are currently supported.
+    jump               Matches the patterns to a path prints a cd command for that path.
+    edit               Open up the data file in $EDITOR.
 
 ARGS:
-    --case           Make the pattern case sensitive.
-    --help           Prints help information.
-    --patternmatch   By default zua will escape ( ) . % + - * ? [ ^ $ and match these literally.
-                     This option will disable this and utilise Lua pattern matching.
+    --case             Make the pattern case sensitive.
+    --help             Prints help information.
+    --patternmatch     By default zua will escape ( ) . % + - * ? [ ^ $ and match these literally.
+                       This option will disable this and utilise Lua pattern matching.
 
 ENVIRONMENT VARIABLES:
        ZUA_DEFAULT_ARGS
@@ -51,7 +51,7 @@ local function initialize()
     local shell = patterns[1]
     if shell == "fish" then
         print([[
-function _zua_cd
+function zua
     if test "$argv" = -; or test "$argv" = ..
         cd $argv
         return
@@ -65,12 +65,10 @@ end
 function _zua_add --on-variable PWD
     zua.lua add $PWD/
 end
-alias z _zua_cd
-set -gx ZUA_DATA_FILE $HOME/.local/state/zua/data
 ]])
     elseif shell == "zsh" then
         print([[
-_zua_cd() {
+zua() {
     if [[ "$@" = "-" || "$@" = ".." ]] .. "]]" .. [[; then
         cd "$@"
         return
@@ -85,8 +83,6 @@ _zua_add() {
     zua.lua add $PWD/
 }
 chpwd_functions+=(_zua_add)
-alias z="_zua_cd"
-export ZUA_DATA_FILE="$HOME/.local/state/zua/data"
 ]])
     else
         error("shell not supported: " .. shell)
