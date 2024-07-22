@@ -65,6 +65,9 @@ end
 function _zua_add --on-variable PWD
     zua.lua add $PWD/
 end
+if not set -q ZUA_DATA_FILE
+    set -gx ZUA_DATA_FILE $HOME/.local/state/zua/data
+end
 ]])
     elseif shell == "zsh" then
         print([[
@@ -83,6 +86,7 @@ _zua_add() {
     zua.lua add $PWD/
 }
 chpwd_functions+=(_zua_add)
+export ZUA_DATA_FILE="${ZUA_DATA_FILE:=$HOME/.local/state/zua/data}"
 ]])
     else
         error("shell not supported: " .. shell)
