@@ -1,37 +1,48 @@
 #!/usr/bin/env lua
--- If you'd like to use luajit or Lua51 etc, simply change the shebang
 
 DATA_FILE = os.getenv("ZUA_DATA_FILE") or "~/.local/state/zua/data"
 DATA_FILE = DATA_FILE:gsub("^~", assert(os.getenv("HOME")))
 
-local args = {
-    case = false,
-    help = false,
-    patternmatch = false,
-    version = false,
+local options = {
+    help = {
+        short = "h",
+        value = false,
+    },
+    version = {
+        short = "v",
+        value = false,
+    },
+    patternmatch = {
+        short = "p",
+        value = false,
+    },
+    case = {
+        short = "c",
+        value = false,
+    },
 }
-local patterns = {}
-local version = "1.1.2"
+
+local version = "1.2.1"
 local help_msg = [[
 zua.lua ]] .. version .. [[
 
 A simple and lightweight autojump tool
 
-USAGE:
+Usage:
     If the shell has been configured then:
     zua <pattern>...   This will match the pattern against the paths contained with $ZUA_DATA_FILE
                        and jump to the first match
     If using zua directly then:
-    zua.lua [CMD] [ARGS]
+    zua.lua [Command] [Options]
 
-CMD:
+Commands:
     add <path>         Adds the provided path to the data file.
     init <shell>       Outputs the required shell code to be added to shell config.
                        "fish" and "zsh" are currently supported.
     jump               Matches the patterns to a path prints a cd command for that path.
     edit               Open up the data file in $EDITOR.
 
-ARGS:
+Options:
     --case             Make the pattern case sensitive.
     --help             Prints help information.
     --patternmatch     By default zua will escape ( ) . % + - * ? [ ^ $ and match these literally.
@@ -46,11 +57,14 @@ ENVIRONMENT VARIABLES:
 https://github.com/Shivix/zua.lua
 ]]
 
-local function initialize()
-    assert(#patterns == 1)
+local function initialize(patterns)
+    if #patterns ~= 1 then
+        io.stderr:write("init requires a single arg (the shell name)")
+        os.exit(1)
+    end
     local shell = patterns[1]
     if shell == "fish" then
-        print([[
+        return [[
 function zua
     if test "$argv" = -; or test "$argv" = ..
         cd $argv
@@ -68,9 +82,9 @@ end
 if not set -q ZUA_DATA_FILE
     set -gx ZUA_DATA_FILE $HOME/.local/state/zua/data
 end
-]])
+]]
     elseif shell == "zsh" then
-        print([[
+        return [[
 zua() {
     if [[ "$@" = "-" || "$@" = ".." ]] .. "]]" .. [[; then
         cd "$@"
@@ -87,13 +101,14 @@ _zua_add() {
 }
 chpwd_functions+=(_zua_add)
 export ZUA_DATA_FILE="${ZUA_DATA_FILE:=$HOME/.local/state/zua/data}"
-]])
+]]
     else
-        error("shell not supported: " .. shell)
+        io.stderr:write("shell not supported: " .. shell)
+        os.exit(1)
     end
 end
 
-local function add_path()
+local function add_path(patterns)
     local data = io.open(DATA_FILE, "r")
     if data == nil then
         error("file at $ZUA_DATA_FILE does not exist")
@@ -110,34 +125,89 @@ local function add_path()
     data:write(path .. "\n")
 end
 
-local function find_match()
-    local data = io.open(DATA_FILE, "r")
+local function matches_all_patterns(line, patterns)
+    for _, pattern in ipairs(patterns) do
+        if not line:lower():find(pattern) then
+            return false
+        end
+    end
+    return true
+end
+
+local function find_match(patterns, opts)
+    -- Shell function should only use cd in this case.
+    assert(#patterns ~= 0)
+    local data <close> = io.open(DATA_FILE, "r")
     if data == nil then
         error("file at $ZUA_DATA_FILE does not exist")
     end
 
-    if not args.case then
+    if not opts.case then
         for i, pattern in ipairs(patterns) do
             patterns[i] = pattern:lower()
         end
     end
+    if not opts.patternmatch then
+        for i, pattern in ipairs(patterns) do
+            -- Escape the magic characters and match them literally.
+            patterns[i] = pattern:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
+        end
+    end
 
     for line in data:lines() do
-        for _, a in ipairs(patterns) do
-            if not args.patternmatch then
-                -- Escape the magic characters and match them literally.
-                a = a:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
-            end
-            if not line:lower():find(a) then
-                goto continue
-            end
+        if matches_all_patterns(line, patterns) then
+            -- TODO: Check if path exists, if not, delete it from data.
+            -- Ensure that we only ever try to cd with a single string arg to avoid eval running any bad code.
+            return "'" .. line:gsub("'", "'\\''") .. "'"
         end
-        -- TODO: Check if path exists, if not, delete it from data.
-        -- Ensure that we only ever try to cd with a single string arg to avoid eval running any bad code.
-        print("cd '" .. line:gsub("'", "'\\''") .. "'")
-        os.exit()
-        ::continue::
     end
+    return nil
+end
+
+local function get_opt(arg_name, defined_opts)
+    for long, opt in pairs(defined_opts) do
+        if arg_name == long or arg_name == opt.short then
+            opt.long = long
+            return opt
+        end
+    end
+    return nil
+end
+
+local function parse_args(defined_opts)
+    local parsedArgs = {}
+    local opts = {}
+    local i = 1
+    while i <= #arg do
+        local current_arg = arg[i]
+        local arg_name = current_arg:match("^%-%-?([^=]*)")
+        if arg_name ~= nil then
+            local opt = get_opt(arg_name, defined_opts)
+            if opt == nil then
+                io.stderr:write("Invalid option: " .. arg_name .. "\n")
+                os.exit(1)
+            end
+            if opt.value then
+                local value = current_arg:match("^%-%-?.-=(.*)$")
+                if value == nil then
+                    value = arg[i + 1]
+                    if value == nil or value:match("^%-") then
+                        io.stderr:write("Value expected for option: " .. arg_name .. "\n")
+                        os.exit(1)
+                    end
+                    i = i + 1
+                end
+                opts[opt.long] = value
+            else
+                opts[opt.long] = true
+            end
+        else
+            table.insert(parsedArgs, current_arg)
+        end
+
+        i = i + 1
+    end
+    return opts, parsedArgs
 end
 
 if #arg == 0 then
@@ -145,33 +215,28 @@ if #arg == 0 then
     os.exit(1)
 end
 
-local cmd = arg[1]
-for i = 2, #arg do
-    local pos = assert(arg[i]:find("[^-]"))
-    if pos > 1 then
-        local name = arg[i]:sub(pos, -1)
-        if args[name] == nil then
-            io.stderr:write(name)
-            os.exit(1)
-        end
-        args[name] = true
-    else
-        table.insert(patterns, arg[i])
-    end
-end
+local opts, args = parse_args(options)
 
-if args.help then
-    io.stderr:write(help_msg)
-elseif args.version then
+local cmd = args[1]
+local patterns = { table.unpack(args, 2) }
+
+if opts.help then
+    print(help_msg)
+elseif opts.version then
     print("echo zua.lua v" .. version)
 elseif cmd == "add" then
-    add_path()
+    add_path(patterns)
 elseif cmd == "edit" then
     print(os.getenv("EDITOR") .. " " .. DATA_FILE)
 elseif cmd == "init" then
-    initialize()
+    print(initialize(patterns))
 elseif cmd == "jump" then
-    find_match()
+    local match = find_match(patterns, opts)
+    if match then
+        print("cd " .. match)
+    else
+        print("No match found")
+    end
 else
     io.stderr:write(help_msg)
 end
