@@ -26,7 +26,7 @@ local options = {
     },
 }
 
-local version = "1.2.2"
+local version = "1.3.1"
 local help_msg = [[
 zua.lua ]] .. version .. [[
 
@@ -74,7 +74,9 @@ local function initialize(patterns, opts)
     end
     local shell = patterns[1]
     if shell == "fish" then
-        return "function " .. (opts.name or "zua") .. [[ -d "A simple and predictable smart cd"
+        return "function "
+            .. (opts.name or "zua")
+            .. [[ -d "A simple and predictable smart cd"
     if test "$argv" = -; or test "$argv" = ..
         cd $argv
         return
@@ -93,12 +95,17 @@ if not set -q ZUA_DATA_FILE
 end
 ]]
     elseif shell == "zsh" then
-        return (opts.name or "zua") .. [[() {
-    if [[ "$@" = "-" || "$@" = ".." ]] .. "]]" .. [[; then
+        return (opts.name or "zua")
+            .. [[() {
+    if [[ "$@" = "-" || "$@" = ".." ]]
+            .. "]]"
+            .. [[; then
         cd "$@"
         return
     fi
-    if [[ -z "$@" ]] .. "]]" .. [[; then
+    if [[ -z "$@" ]]
+            .. "]]"
+            .. [[; then
         cd
         return
     fi
