@@ -5,7 +5,7 @@ RUN pacman -Sy && \
     pacman -Sc --noconfirm
 
 RUN mkdir ~/.config/fish -p
-RUN echo 'zua.lua init fish --name z | source' >> ~/.config/fish/config.fish
+RUN echo 'zua.lua init | source' >> ~/.config/fish/config.fish
 RUN echo 'set -gx ZUA_DATA_FILE ~/zua_data_file' >> ~/.config/fish/config.fish
 RUN touch ~/zua_data_file
 

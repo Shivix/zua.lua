@@ -1,27 +1,19 @@
 # Zua.lua
 A simple, lightweight and predictable autojump tool.
-Requires Lua5.4 (If you'd like to use an older lua, it's just a few lines to change)
+
+This simple branch contains a stripped down version of zua that matches my personal use case.
 
 ## Usage
 Install zua.lua somewhere your shell can find it. A Makefile is provided that installs it to /usr/local/bin.
 
-Add one of the following lines to your shell config:
-```bash
+Add the following line to your shell config:
+```fish
 # Fish
-zua.lua init fish | source
-# Zsh
-source <(zua.lua init zsh)
+zua init fish | source
 ```
 
-Paths will be added to the data file whenever you `cd` into a new directory.\
-Then you can give zua a pattern or number of patterns and zua will cd into the first path that matches all patterns.
-```bash
-$ zua <pattern>
-```
+Paths will be added to the data file whenever your current working directory changes.
 
-Supports opt in pattern matching on file matching and opt in case sensitivity.\
-See `zua.lua --help` for details.\
-`$ZUA_DEFAULT_ARGS` Environment variable may be set to adjust default behaviour.\
 `$ZUA_DATA_FILE` Environment variable may be set to adjust where the paths are stored.
 
 ## Issues
