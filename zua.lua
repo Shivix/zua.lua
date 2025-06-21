@@ -6,19 +6,15 @@ DATA_FILE = DATA_FILE:gsub("^~", assert(os.getenv("HOME")))
 local options = {
     help = {
         short = "h",
-        value = false,
     },
     version = {
         short = "v",
-        value = false,
     },
     patternmatch = {
         short = "p",
-        value = false,
     },
     case = {
         short = "c",
-        value = false,
     },
     name = {
         short = "n",
@@ -26,7 +22,7 @@ local options = {
     },
 }
 
-local version = "1.3.1"
+local version = "1.4.1"
 local help_msg = [[
 zua.lua ]] .. version .. [[
 
@@ -124,12 +120,12 @@ export ZUA_DATA_FILE="${ZUA_DATA_FILE:=$HOME/.local/state/zua/data}"
 end
 
 local function add_path(patterns)
+    assert(#patterns == 1)
+    local path = patterns[1]
     local data = io.open(DATA_FILE, "r")
     if data == nil then
         error("file at $ZUA_DATA_FILE does not exist")
     end
-    assert(#patterns == 1)
-    local path = patterns[1]
     for line in data:lines() do
         if line == path then
             return
@@ -138,6 +134,24 @@ local function add_path(patterns)
     data:close()
     data = assert(io.open(DATA_FILE, "a+"))
     data:write(path .. "\n")
+    data:close()
+    os.execute("sort " .. DATA_FILE .. " -o " .. DATA_FILE)
+end
+
+local function delete_path(path)
+    local lines = {}
+    local file = assert(io.open(DATA_FILE, "r"))
+    for line in file:lines() do
+        if line ~= path then
+            table.insert(lines, line)
+        end
+    end
+    file:close()
+    file = assert(io.open(DATA_FILE, "w"))
+    for _, line in ipairs(lines) do
+        file:write(line .. "\n")
+    end
+    file:close()
 end
 
 local function matches_all_patterns(line, patterns)
@@ -147,6 +161,13 @@ local function matches_all_patterns(line, patterns)
         end
     end
     return true
+end
+local function last_pattern_matches_child_directory(line, pattern)
+    local pos = line:find("/[^/]*/$")
+    if pos == nil then
+        return
+    end
+    return line:sub(pos):lower():find(pattern)
 end
 
 local function find_match(patterns, opts)
@@ -169,14 +190,29 @@ local function find_match(patterns, opts)
         end
     end
 
+    ::rematch::
+    local match
     for line in data:lines() do
         if matches_all_patterns(line, patterns) then
-            -- TODO: Check if path exists, if not, delete it from data.
-            -- Ensure that we only ever try to cd with a single string arg to avoid eval running any bad code.
-            return "'" .. line:gsub("'", "'\\''") .. "'"
+            if last_pattern_matches_child_directory(line, patterns[#patterns]) then
+                match = line
+                break
+            end
+            if match == nil then
+                match = line
+            end
         end
     end
-    return nil
+    if match then
+        -- Ensure that we only ever try to cd with a single string arg to avoid eval running any bad code.
+        local file <close> = io.open(match, "r")
+        if file == nil then
+            delete_path(match)
+            io.stderr:write("Deleting invalid path: " .. match .. "\n")
+            goto rematch
+        end
+        return "'" .. match:gsub("'", "'\\''") .. "'"
+    end
 end
 
 local function get_opt(arg_name, defined_opts)
@@ -247,7 +283,7 @@ elseif opts.version then
 elseif cmd == "add" then
     add_path(patterns)
 elseif cmd == "edit" then
-    print(os.getenv("EDITOR") .. " " .. DATA_FILE)
+    os.execute(os.getenv("EDITOR") .. " " .. DATA_FILE)
 elseif cmd == "init" then
     print(initialize(patterns, opts))
 elseif cmd == "jump" then
