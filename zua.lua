@@ -6,10 +6,12 @@ DATA_FILE = os.getenv("ZUA_DATA_FILE") or "~/.local/state/zua/data"
 DATA_FILE = DATA_FILE:gsub("^~", assert(os.getenv("HOME")))
 
 local options = {
-    help = {
+    {
+        long = "help",
         short = "h",
     },
-    version = {
+    {
+        long = "version",
         short = "v",
     },
 }
