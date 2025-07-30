@@ -48,13 +48,18 @@ local function clean()
         error("file at $ZUA_DATA_FILE does not exist")
     end
     os.execute("cp " .. DATA_FILE .. " " .. DATA_FILE..".old")
+    local invalid_paths = {}
     for line in data:lines() do
         local exists = os.execute("ls " .. line .. ">/dev/null")
         if not exists then
             local path = line:gsub("([%^%$%*%.%[%]%+%-%?%(%)%%/])", "\\%1")
-            os.execute(string.format("sed -i '/^%s$/d' %q", path, DATA_FILE))
+            table.insert(invalid_paths, path)
         end
     end
+    for _, path in ipairs(invalid_paths) do
+        os.execute(string.format("sed -i '/^%s$/d' %q", path, DATA_FILE))
+    end
+    print("cleaned " .. #invalid_paths .. " paths")
 end
 
 local function initialize()
