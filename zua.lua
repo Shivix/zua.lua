@@ -27,9 +27,9 @@ Usage:
 
 Commands:
     add <path>         Adds the provided path to the data file.
-    init <shell>       Outputs the required shell code to be added to shell config.
-                       "fish" and "zsh" are currently supported.
+    clean              Removes any invalid paths from the data file.
     edit               Open up the data file in $EDITOR.
+    init               Outputs the required shell code to be added to shell config.
 
 Options:
     --help             Prints help information.
@@ -41,6 +41,21 @@ ENVIRONMENT VARIABLES:
 
 https://github.com/Shivix/zua.lua
 ]]
+
+local function clean()
+    local data <close> = io.open(DATA_FILE, "r")
+    if data == nil then
+        error("file at $ZUA_DATA_FILE does not exist")
+    end
+    os.execute("cp " .. DATA_FILE .. " " .. DATA_FILE..".old")
+    for line in data:lines() do
+        local exists = os.execute("ls " .. line .. ">/dev/null")
+        if not exists then
+            local path = line:gsub("([%^%$%*%.%[%]%+%-%?%(%)%%/])", "\\%1")
+            os.execute(string.format("sed -i '/^%s$/d' %q", path, DATA_FILE))
+        end
+    end
+end
 
 local function initialize()
     return [[
@@ -85,6 +100,8 @@ elseif opts.version then
     print("zua version " .. version)
 elseif cmd == "add" then
     add_path(args[2])
+elseif cmd == "clean" then
+    clean()
 elseif cmd == "edit" then
     os.execute(os.getenv("EDITOR") .. " " .. DATA_FILE)
 elseif cmd == "init" then
