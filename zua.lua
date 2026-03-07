@@ -39,7 +39,7 @@ local options = {
     },
 }
 
-local version = "1.4.1"
+local version = "1.5.1"
 local help_msg = [[
 zua.lua ]] .. version .. [[
 
@@ -184,22 +184,6 @@ local function add_path(patterns)
     os.execute("sort " .. DATA_FILE .. " -o " .. DATA_FILE)
 end
 
-local function delete_path(path)
-    local lines = {}
-    local file = assert(io.open(DATA_FILE, "r"))
-    for line in file:lines() do
-        if line ~= path then
-            table.insert(lines, line)
-        end
-    end
-    file:close()
-    file = assert(io.open(DATA_FILE, "w"))
-    for _, line in ipairs(lines) do
-        file:write(line .. "\n")
-    end
-    file:close()
-end
-
 local function matches_all_patterns(line, patterns)
     for _, pattern in ipairs(patterns) do
         if not line:lower():find(pattern) then
@@ -236,7 +220,6 @@ local function find_match(patterns, opts)
         end
     end
 
-    ::rematch::
     local match
     for line in data:lines() do
         if matches_all_patterns(line, patterns) then
@@ -251,12 +234,6 @@ local function find_match(patterns, opts)
     end
     if match then
         -- Ensure that we only ever try to cd with a single string arg to avoid eval running any bad code.
-        local file <close> = io.open(match, "r")
-        if file == nil then
-            delete_path(match)
-            io.stderr:write("Deleting invalid path: " .. match .. "\n")
-            goto rematch
-        end
         return "'" .. match:gsub("'", "'\\''") .. "'"
     end
 end
