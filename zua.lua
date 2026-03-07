@@ -54,10 +54,12 @@ Usage:
 
 Commands:
     add <path>         Adds the provided path to the data file.
+    clean              Removes any invalid paths from $ZUA_DATA_FILE.
+    completion         Outputs completion for options.
+    edit               Open up the data file in $EDITOR.
     init <shell>       Outputs the required shell code to be added to shell config.
                        "fish" and "zsh" are currently supported.
     jump               Matches the patterns to a path prints a cd command for that path.
-    edit               Open up the data file in $EDITOR.
 
 ]] .. argslib.generate_usage(options) .. [[
 
@@ -112,6 +114,26 @@ _zua_add() {
 chpwd_functions+=(_zua_add)
 export ZUA_DATA_FILE="${ZUA_DATA_FILE:=$HOME/.local/state/zua/data}"
 ]]
+
+local function clean()
+    local data <close> = io.open(DATA_FILE, "r")
+    if data == nil then
+        error("file at $ZUA_DATA_FILE does not exist")
+    end
+    os.execute("cp " .. DATA_FILE .. " " .. DATA_FILE..".old")
+    local invalid_paths = {}
+    for line in data:lines() do
+        local exists = os.execute("ls " .. line .. ">/dev/null")
+        if not exists then
+            local path = line:gsub("([%^%$%*%.%[%]%+%-%?%(%)%%/])", "\\%1")
+            table.insert(invalid_paths, path)
+        end
+    end
+    for _, path in ipairs(invalid_paths) do
+        os.execute(string.format("sed -i '/^%s$/d' %q", path, DATA_FILE))
+    end
+    print("cleaned " .. #invalid_paths .. " paths")
+end
 
 local function initialize(patterns, opts)
     if #patterns ~= 1 then
@@ -260,6 +282,8 @@ elseif opts.version then
     print("echo zua.lua v" .. version)
 elseif cmd == "add" then
     add_path(patterns)
+elseif cmd == "clean" then
+    clean()
 elseif cmd == "completion" then
     print(argslib.generate_completion("zua", options))
     os.exit(0)
