@@ -1,6 +1,7 @@
 # Zua.lua
 A simple, lightweight and predictable autojump tool.
-Requires Lua5.4 (If you'd like to use an older lua, it's just a few lines to change)
+Requires Lua5.4 or higher (If you'd like to use an older version, it's just a few lines to change)
+Requires [LuaLib](https://github.com/Shivix/lualib)
 
 ## Usage
 Install zua.lua somewhere your shell can find it. A Makefile is provided that installs it to /usr/local/bin.
@@ -23,6 +24,11 @@ Supports opt in pattern matching on file matching and opt in case sensitivity.\
 See `zua.lua --help` for details.\
 `$ZUA_DEFAULT_ARGS` Environment variable may be set to adjust default behaviour.\
 `$ZUA_DATA_FILE` Environment variable may be set to adjust where the paths are stored.
+
+completion can be generated with:
+```bash
+$ zua.lua completion
+```
 
 ## Issues
 Any bugs/ requests can be added to the [issues](https://github.com/Shivix/zua.lua/issues) page on the GitHub repository.\
