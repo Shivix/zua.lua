@@ -1,8 +1,10 @@
 SRC = zua.lua
 PREFIX ?= /usr/local
-INSTALL_TARGET = $(PREFIX)/bin/zua
+INSTALL_DIR = $(PREFIX)/bin
+INSTALL_TARGET = $(INSTALL_DIR)/zua
 
 install:
+	mkdir -p "$(DESTDIR)$(INSTALL_DIR)"
 	cp $(SRC) $(INSTALL_TARGET)
 	chmod +x $(INSTALL_TARGET)
 
