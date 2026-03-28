@@ -5,8 +5,8 @@ INSTALL_TARGET = $(INSTALL_DIR)/zua
 
 install:
 	mkdir -p "$(DESTDIR)$(INSTALL_DIR)"
-	cp $(SRC) $(INSTALL_TARGET)
-	chmod +x $(INSTALL_TARGET)
+	cp $(SRC) $(DESTDIR)$(INSTALL_TARGET)
+	chmod +x $(DESTDIR)$(INSTALL_TARGET)
 
 install-completion:
 	install -m 644 zua.fish $(HOME)/.config/fish/completions/zua.fish
